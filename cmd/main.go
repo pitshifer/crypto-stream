@@ -21,21 +21,10 @@ func main() {
 		go func(s string) {
 			defer wg.Done()
 
-			client := binance.NewClient("wss://stream.binance.com:9443/ws/" + s + "@trade")
-			if err := client.Connect(); err != nil {
-				log.Println("connection error:", err)
-				return
-			}
-			defer client.Close()
-
-			events, err := client.Stream(ctx)
-			if err != nil {
-				log.Println("stream error:", err)
-				return
-			}
-
-			for event := range events {
-				log.Printf("Trade Event: %+v\n", event)
+			if err := binance.Listen(ctx, s, func(event binance.TradeEvent) {
+				log.Printf("TradeEvent: %+v\n", event)
+			}); err != nil {
+				log.Printf("listen error: %s %v\n", s, err)
 			}
 		}(symbol)
 	}

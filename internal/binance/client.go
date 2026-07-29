@@ -3,6 +3,7 @@ package binance
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -23,9 +24,9 @@ type Client struct {
 	conn *websocket.Conn
 }
 
-func NewClient(url string) *Client {
+func NewClient(symbol string) *Client {
 	return &Client{
-		url: url,
+		url: fmt.Sprintf("wss://stream.binance.com:9443/ws/%s@trade", symbol),
 	}
 }
 
@@ -98,4 +99,20 @@ func (c *Client) Stream(ctx context.Context) (<-chan TradeEvent, error) {
 	}()
 
 	return events, nil
+}
+
+func Listen(ctx context.Context, symbol string, handle func(TradeEvent)) error {
+	client := NewClient(symbol)
+
+	events, err := client.Stream(ctx)
+	if err != nil {
+		log.Println("stream error:", err)
+		return err
+	}
+
+	for event := range events {
+		handle(event)
+	}
+
+	return nil
 }
