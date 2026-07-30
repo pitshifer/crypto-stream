@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := config.NewConfig("config.json")
+	cfg, err := config.NewConfig("config.json")
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
@@ -20,13 +20,13 @@ func main() {
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(config.Symbols))
+	wg.Add(len(cfg.Symbols))
 
-	for _, symbol := range config.Symbols {
+	for _, symbol := range cfg.Symbols {
 		go func(s string) {
 			defer wg.Done()
 
-			if err := binance.Listen(ctx, config.BinanceWsHost, s, func(event binance.TradeEvent) {
+			if err := binance.Listen(ctx, cfg.BinanceWsHost, s, func(event binance.TradeEvent) {
 				log.Printf("TradeEvent: %+v\n", event)
 			}); err != nil {
 				log.Printf("symbol: %s, listen error: %v\n", s, err)
