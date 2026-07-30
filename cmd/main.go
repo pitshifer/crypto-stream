@@ -24,7 +24,7 @@ func main() {
 			if err := binance.Listen(ctx, s, func(event binance.TradeEvent) {
 				log.Printf("TradeEvent: %+v\n", event)
 			}); err != nil {
-				log.Printf("listen error: %s %v\n", s, err)
+				log.Printf("symbol: %s, listen error: %v\n", s, err)
 			}
 		}(symbol)
 	}
