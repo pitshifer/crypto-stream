@@ -16,5 +16,6 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /app
 
 COPY --from=builder /app/crypto-stream .
+COPY config.json .
 
 CMD ["./crypto-stream"]

@@ -24,9 +24,9 @@ type Client struct {
 	conn *websocket.Conn
 }
 
-func NewClient(symbol string) *Client {
+func NewClient(host, symbol string) *Client {
 	return &Client{
-		url: fmt.Sprintf("wss://stream.binance.com:9443/ws/%s@trade", symbol),
+		url: fmt.Sprintf("wss://%s/ws/%s@trade", host, symbol),
 	}
 }
 
@@ -101,8 +101,8 @@ func (c *Client) Stream(ctx context.Context) (<-chan TradeEvent, error) {
 	return events, nil
 }
 
-func Listen(ctx context.Context, symbol string, handle func(TradeEvent)) error {
-	client := NewClient(symbol)
+func Listen(ctx context.Context, host, symbol string, handle func(TradeEvent)) error {
+	client := NewClient(host, symbol)
 
 	events, err := client.Stream(ctx)
 	if err != nil {
