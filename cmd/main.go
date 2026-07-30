@@ -22,16 +22,22 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(cfg.Symbols))
 
+	client := binance.NewClient(cfg.BinanceWsHost)
+
 	for _, symbol := range cfg.Symbols {
-		go func(s string) {
+		go func() {
 			defer wg.Done()
 
-			if err := binance.Listen(ctx, cfg.BinanceWsHost, s, func(event binance.TradeEvent) {
-				log.Printf("TradeEvent: %+v\n", event)
-			}); err != nil {
-				log.Printf("symbol: %s, listen error: %v\n", s, err)
+			eventCh, err := client.Listen(ctx, symbol)
+			if err != nil {
+				log.Printf("symbol: %s, listen error: %v\n", symbol, err)
+				return
 			}
-		}(symbol)
+
+			for event := range eventCh {
+				log.Printf("symbol: %s, TradeEvent: %+v\n", symbol, event)
+			}
+		}()
 	}
 
 	wg.Wait()

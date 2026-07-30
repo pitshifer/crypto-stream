@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,22 +21,28 @@ type TradeEvent struct {
 }
 
 type Client struct {
-	url  string
-	conn *websocket.Conn
+	host  string
+	conns map[string]*websocket.Conn
+	feed  map[string]chan TradeEvent
+
+	mu sync.Mutex
 }
 
-func NewClient(host, symbol string) *Client {
+func NewClient(host string) *Client {
 	return &Client{
-		url: fmt.Sprintf("wss://%s/ws/%s@trade", host, symbol),
+		host:  host,
+		conns: make(map[string]*websocket.Conn),
+		feed:  make(map[string]chan TradeEvent),
 	}
 }
 
-func (c *Client) Connect() error {
-	if c.conn != nil {
-		_ = c.Close()
+func (c *Client) connect(symbol string) error {
+	if conn, ok := c.conns[symbol]; ok && conn != nil {
+		_ = c.Close(symbol)
 	}
 
-	conn, resp, err := websocket.DefaultDialer.Dial(c.url, nil)
+	url := fmt.Sprintf("wss://%s/ws/%s@trade", c.host, symbol)
+	conn, resp, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		if resp != nil {
 			log.Printf("handshake failed, status: %s", resp.Status)
@@ -44,31 +51,50 @@ func (c *Client) Connect() error {
 	}
 
 	log.Println("connected, listening for trades...")
-	c.conn = conn
+
+	c.mu.Lock()
+	c.conns[symbol] = conn
+	c.feed[symbol] = make(chan TradeEvent, 100)
+	c.mu.Unlock()
 
 	return nil
 }
 
-func (c *Client) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
+func (c *Client) Close(symbol string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.conns[symbol] != nil {
+		return c.conns[symbol].Close()
 	}
 	return nil
 }
 
-func (c *Client) Stream(ctx context.Context) (<-chan TradeEvent, error) {
-	if c.conn == nil {
-		if err := c.Connect(); err != nil {
+func (c *Client) Listen(ctx context.Context, symbol string) (<-chan TradeEvent, error) {
+	var conn *websocket.Conn
+	var feed chan TradeEvent
+
+	c.mu.Lock()
+	conn, ok := c.conns[symbol]
+	c.mu.Unlock()
+
+	if !ok || conn == nil {
+		err := c.connect(symbol)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	events := make(chan TradeEvent)
+	c.mu.Lock()
+	conn = c.conns[symbol]
+	feed = c.feed[symbol]
+	c.mu.Unlock()
+
 	var tradeEvent TradeEvent
 
 	go func() {
 		for {
-			_, msg, err := c.conn.ReadMessage()
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				if ctx.Err() != nil {
 					return // context canceled, exit the goroutine
@@ -83,7 +109,7 @@ func (c *Client) Stream(ctx context.Context) (<-chan TradeEvent, error) {
 			}
 
 			select {
-			case events <- tradeEvent:
+			case feed <- tradeEvent:
 			case <-ctx.Done():
 				return
 			}
@@ -92,27 +118,11 @@ func (c *Client) Stream(ctx context.Context) (<-chan TradeEvent, error) {
 
 	go func() {
 		<-ctx.Done()
-		if err := c.Close(); err != nil {
+		if err := c.Close(symbol); err != nil {
 			log.Println("error closing connection:", err)
 		}
-		close(events)
+		close(feed)
 	}()
 
-	return events, nil
-}
-
-func Listen(ctx context.Context, host, symbol string, handle func(TradeEvent)) error {
-	client := NewClient(host, symbol)
-
-	events, err := client.Stream(ctx)
-	if err != nil {
-		log.Println("stream error:", err)
-		return err
-	}
-
-	for event := range events {
-		handle(event)
-	}
-
-	return nil
+	return feed, nil
 }
