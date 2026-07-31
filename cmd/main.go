@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"strconv"
 	"sync"
 	"time"
@@ -18,7 +20,15 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 360*time.Second)
+	// pprofiler
+	go func() {
+		log.Println("pprof listening on localhost:6060")
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			log.Printf("pprof listen error: %v\n", err)
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3600*time.Second)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
