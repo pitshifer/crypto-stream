@@ -2,5 +2,6 @@
     "binance_ws_host": "stream.binance.com:9443",
     "symbols": ["btcusdt", "ethusdt", "bnbusdt", "adausdt", "xrpusdt"],
 
-    "log_level": "info"
+    "log_level": "info",
+    "log_format": "text"
 }

@@ -23,10 +23,19 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	}))
-	slog.SetDefault(logger)
+	// logger
+	var logHandler slog.Handler
+	switch cfg.LogFormat {
+	case "json":
+		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: cfg.LogLevel,
+		})
+	default:
+		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: cfg.LogLevel,
+		})
+	}
+	slog.SetDefault(slog.New(logHandler))
 
 	// pprofiler
 	go func() {

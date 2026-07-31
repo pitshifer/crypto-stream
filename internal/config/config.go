@@ -10,6 +10,7 @@ type Config struct {
 	BinanceWsHost string     `json:"binance_ws_host"`
 	Symbols       []string   `json:"symbols"`
 	LogLevel      slog.Level `json:"log_level"`
+	LogFormat     string     `json:"log_format"`
 }
 
 func NewConfig(path string) (*Config, error) {
