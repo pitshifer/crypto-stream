@@ -2,12 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 )
 
 type Config struct {
-	BinanceWsHost string   `json:"binance_ws_host"`
-	Symbols       []string `json:"symbols"`
+	BinanceWsHost string     `json:"binance_ws_host"`
+	Symbols       []string   `json:"symbols"`
+	LogLevel      slog.Level `json:"log_level"`
 }
 
 func NewConfig(path string) (*Config, error) {

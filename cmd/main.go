@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -20,11 +22,16 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: cfg.LogLevel,
+	}))
+	slog.SetDefault(logger)
+
 	// pprofiler
 	go func() {
-		log.Println("pprof listening on localhost:6060")
+		slog.Info("pprof listening on localhost:6060")
 		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-			log.Printf("pprof listen error: %v\n", err)
+			slog.Error("pprof listen error", "error", err)
 		}
 	}()
 
@@ -42,7 +49,7 @@ func main() {
 
 			eventCh, err := client.Listen(ctx, symbol)
 			if err != nil {
-				log.Printf("symbol: %s, listen error: %v\n", symbol, err)
+				slog.Error("listen error", "symbol", symbol, "error", err)
 				return
 			}
 
@@ -54,17 +61,17 @@ func main() {
 				select {
 				case <-ticker.C:
 					volatility := aggregator.Volatility()
-					log.Printf("symbol: %s, volatility: %.2f%%\n", symbol, volatility)
+					slog.Info("volatility", "symbol", symbol, "volatility", volatility)
 
 				case event := <-eventCh:
 					price, err := strconv.ParseFloat(event.Price, 64)
 					if err != nil {
-						log.Printf("symbol: %s, parse price error: %v\n", symbol, err)
+						slog.Error("parse price error", "symbol", symbol, "error", err)
 						continue
 					}
 					aggregator.AddPrice(price, time.UnixMilli(event.TradeTime))
 
-					log.Printf("symbol: %s, TradeEvent: %+v\n", symbol, event)
+					slog.Debug("trade event", "symbol", symbol, "event", event)
 
 				case <-ctx.Done():
 					return

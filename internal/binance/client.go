@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -45,12 +45,12 @@ func (c *Client) connect(symbol string) error {
 	conn, resp, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		if resp != nil {
-			log.Printf("handshake failed, status: %s", resp.Status)
+			slog.Error("handshake failed", "status", resp.Status)
 		}
 		return err
 	}
 
-	log.Println("connected, listening for trades...")
+	slog.Info("connected, listening for trades", "symbol", symbol)
 
 	c.mu.Lock()
 	c.conns[symbol] = conn
@@ -99,12 +99,12 @@ func (c *Client) Listen(ctx context.Context, symbol string) (<-chan TradeEvent, 
 				if ctx.Err() != nil {
 					return // context canceled, exit the goroutine
 				}
-				log.Println("read error:", err)
+				slog.Error("read error", "error", err)
 				return
 			}
 
 			if err := json.Unmarshal(msg, &tradeEvent); err != nil {
-				log.Println("unmarshal error:", err)
+				slog.Error("unmarshal error", "error", err)
 				continue
 			}
 
@@ -119,7 +119,7 @@ func (c *Client) Listen(ctx context.Context, symbol string) (<-chan TradeEvent, 
 	go func() {
 		<-ctx.Done()
 		if err := c.Close(symbol); err != nil {
-			log.Println("error closing connection:", err)
+			slog.Error("error closing connection", "error", err)
 		}
 		close(feed)
 	}()
