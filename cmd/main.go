@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"math"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -61,7 +62,8 @@ func main() {
 				select {
 				case <-ticker.C:
 					volatility := aggregator.Volatility()
-					slog.Info("volatility", "symbol", symbol, "volatility", volatility)
+					roundedVolatility := math.Round(volatility*100) / 100
+					slog.Info("volatility", "symbol", symbol, "volatility", roundedVolatility)
 
 				case event := <-eventCh:
 					price, err := strconv.ParseFloat(event.Price, 64)
