@@ -36,13 +36,13 @@ func NewClient(host string) *Client {
 	}
 }
 
-func (c *Client) connect(symbol string) error {
+func (c *Client) connect(ctx context.Context, symbol string) error {
 	if conn, ok := c.conns[symbol]; ok && conn != nil {
 		_ = c.Close(symbol)
 	}
 
 	url := fmt.Sprintf("wss://%s/ws/%s@trade", c.host, symbol)
-	conn, resp, err := websocket.DefaultDialer.Dial(url, nil)
+	conn, resp, err := websocket.DefaultDialer.DialContext(ctx, url, nil)
 	if err != nil {
 		if resp != nil {
 			slog.Error("handshake failed", "status", resp.Status)
@@ -79,7 +79,7 @@ func (c *Client) Listen(ctx context.Context, symbol string) (<-chan TradeEvent, 
 	c.mu.Unlock()
 
 	if !ok || conn == nil {
-		err := c.connect(symbol)
+		err := c.connect(ctx, symbol)
 		if err != nil {
 			return nil, err
 		}

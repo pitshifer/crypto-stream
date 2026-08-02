@@ -8,8 +8,10 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/pitshifer/crypto-stream/internal/aggregator"
@@ -45,8 +47,8 @@ func main() {
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3600*time.Second)
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(cfg.Symbols))
@@ -91,5 +93,16 @@ func main() {
 		}()
 	}
 
-	wg.Wait()
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		slog.Info("all goroutines finished")
+	case <-time.After(5 * time.Second):
+		slog.Warn("shutdown timer exceeded, forcing exit")
+	}
 }
