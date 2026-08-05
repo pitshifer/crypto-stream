@@ -7,10 +7,18 @@ import (
 )
 
 type Config struct {
-	BinanceWsHost string     `json:"binance_ws_host"`
-	Symbols       []string   `json:"symbols"`
-	LogLevel      slog.Level `json:"log_level"`
-	LogFormat     string     `json:"log_format"`
+	BinanceWsHost string         `json:"binance_ws_host"`
+	Symbols       []SymbolConfig `json:"symbols"`
+	LogLevel      slog.Level     `json:"log_level"`
+	LogFormat     string         `json:"log_format"`
+
+	KafkaBrokers    []string `json:"kafka_brokers"`
+	KafkaAlertTopic string   `json:"kafka_alert_topic"`
+}
+
+type SymbolConfig struct {
+	Symbol              string  `json:"symbol"`
+	VolatilityThreshold float64 `json:"volatility_threshold"`
 }
 
 func NewConfig(path string) (*Config, error) {

@@ -17,6 +17,7 @@ import (
 	"github.com/pitshifer/crypto-stream/internal/aggregator"
 	"github.com/pitshifer/crypto-stream/internal/binance"
 	"github.com/pitshifer/crypto-stream/internal/config"
+	"github.com/pitshifer/crypto-stream/internal/notify"
 )
 
 func main() {
@@ -54,19 +55,20 @@ func main() {
 	wg.Add(len(cfg.Symbols))
 
 	client := binance.NewClient(cfg.BinanceWsHost)
+	kafkaProducer := notify.NewProducer(cfg.KafkaBrokers, cfg.KafkaAlertTopic)
 
-	for _, symbol := range cfg.Symbols {
+	for _, symbolCfg := range cfg.Symbols {
 		go func() {
 			defer wg.Done()
 
-			eventCh, err := client.Listen(ctx, symbol)
+			eventCh, err := client.Listen(ctx, symbolCfg.Symbol)
 			if err != nil {
-				slog.Error("listen error", "symbol", symbol, "error", err)
+				slog.Error("listen error", "symbol", symbolCfg.Symbol, "error", err)
 				return
 			}
 
 			aggregator := aggregator.NewAggregator(5 * time.Minute)
-			ticker := time.NewTicker(3 * time.Second)
+			ticker := time.NewTicker(2 * time.Minute)
 			defer ticker.Stop()
 
 			for {
@@ -74,17 +76,29 @@ func main() {
 				case <-ticker.C:
 					volatility := aggregator.Volatility()
 					roundedVolatility := math.Round(volatility*100) / 100
-					slog.Info("volatility", "symbol", symbol, "volatility", roundedVolatility)
+					if roundedVolatility >= symbolCfg.VolatilityThreshold {
+						alert := notify.Alert{
+							Symbol:     symbolCfg.Symbol,
+							Volatility: roundedVolatility,
+							Threshold:  symbolCfg.VolatilityThreshold,
+							Timestamp:  time.Now(),
+						}
+						if err := kafkaProducer.Send(ctx, alert); err != nil {
+							slog.Error("failed to send alert", "symbol", symbolCfg.Symbol, "error", err)
+						}
+					}
+
+					slog.Info("volatility", "symbol", symbolCfg.Symbol, "volatility", roundedVolatility)
 
 				case event := <-eventCh:
 					price, err := strconv.ParseFloat(event.Price, 64)
 					if err != nil {
-						slog.Error("parse price error", "symbol", symbol, "error", err)
+						slog.Error("parse price error", "symbol", symbolCfg.Symbol, "error", err)
 						continue
 					}
 					aggregator.AddPrice(price, time.UnixMilli(event.TradeTime))
 
-					slog.Debug("trade event", "symbol", symbol, "event", event)
+					slog.Debug("trade event", "symbol", symbolCfg.Symbol, "event", event)
 
 				case <-ctx.Done():
 					return
@@ -107,5 +121,9 @@ func main() {
 		slog.Info("all goroutines finished")
 	case <-time.After(5 * time.Second):
 		slog.Warn("shutdown timer exceeded, forcing exit")
+	}
+
+	if err := kafkaProducer.Close(); err != nil {
+		slog.Error("failed to close kafka producer", "error", err)
 	}
 }
