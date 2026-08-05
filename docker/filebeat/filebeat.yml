@@ -1,0 +1,20 @@
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: false
+      templates:
+        - condition:
+            contains:
+              docker.container.name: cryptostream
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+filebeat.registry.path: /usr/share/filebeat/data/registry
+
+output.logstash:
+  hosts: ["localhost:5044"]
+
+logging.level: info
+logging.to_stderr: true
