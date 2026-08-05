@@ -93,6 +93,9 @@ func main() {
 		}()
 	}
 
+	<-ctx.Done()
+	slog.Info("shutting down...")
+
 	done := make(chan struct{})
 	go func() {
 		wg.Wait()
