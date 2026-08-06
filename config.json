@@ -15,11 +15,11 @@
         },
         {
             "symbol": "adausdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "xrpusdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.3
         }
     ],
 
