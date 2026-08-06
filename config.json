@@ -3,23 +3,23 @@
     "symbols": [
         {
             "symbol": "btcusdt",
-            "volatility_threshold": 3
-        },
-        {
-            "symbol": "ethusdt",
             "volatility_threshold": 2
         },
         {
+            "symbol": "ethusdt",
+            "volatility_threshold": 1
+        },
+        {
             "symbol": "bnbusdt",
-            "volatility_threshold": 4
+            "volatility_threshold": 3
         },
         {
             "symbol": "adausdt",
-            "volatility_threshold": 1
+            "volatility_threshold": 0.1
         },
         {
             "symbol": "xrpusdt",
-            "volatility_threshold": 1
+            "volatility_threshold": 0.1
         }
     ],
 

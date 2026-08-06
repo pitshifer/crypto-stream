@@ -67,8 +67,8 @@ func main() {
 				return
 			}
 
-			aggregator := aggregator.NewAggregator(5 * time.Minute)
-			ticker := time.NewTicker(2 * time.Minute)
+			aggregator := aggregator.NewAggregator(7 * time.Minute)
+			ticker := time.NewTicker(1 * time.Minute)
 			defer ticker.Stop()
 
 			for {
