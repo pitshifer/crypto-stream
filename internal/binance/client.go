@@ -20,6 +20,16 @@ type TradeEvent struct {
 	TradeTime int64  `json:"T"`
 }
 
+func (t TradeEvent) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("eventType", t.EventType),
+		slog.String("symbol", t.Symbol),
+		slog.String("price", t.Price),
+		slog.String("quantity", t.Quantity),
+		slog.Int64("tradeTime", t.TradeTime),
+	)
+}
+
 type Client struct {
 	host  string
 	conns map[string]*websocket.Conn

@@ -96,9 +96,18 @@ func main() {
 						slog.Error("parse price error", "symbol", symbolCfg.Symbol, "error", err)
 						continue
 					}
+					quantity, err := strconv.ParseFloat(event.Quantity, 64)
+					if err != nil {
+						slog.Error("parse quantity error", "symbol", symbolCfg.Symbol, "error", err)
+						continue
+					}
 					aggregator.AddPrice(price, time.UnixMilli(event.TradeTime))
 
-					slog.Debug("trade event", "symbol", symbolCfg.Symbol, "event", event)
+					slog.Debug("trade event",
+						"symbol", symbolCfg.Symbol,
+						"quantity", quantity,
+						"trade", event,
+					)
 
 				case <-ctx.Done():
 					return

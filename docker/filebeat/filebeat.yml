@@ -10,6 +10,10 @@ filebeat.autodiscover:
             - type: container
               paths:
                 - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              json.keys_under_root: true
+              json.overwrite_keys: true
+              json.add_error_key: true
+              json.message_key: msg
 
 filebeat.registry.path: /usr/share/filebeat/data/registry
 

@@ -3,7 +3,7 @@
     "symbols": [
         {
             "symbol": "btcusdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.4
         },
         {
             "symbol": "ethusdt",
@@ -11,11 +11,11 @@
         },
         {
             "symbol": "bnbusdt",
-            "volatility_threshold": 0.2
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "adausdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "xrpusdt",
@@ -23,11 +23,11 @@
         },
         {
             "symbol": "dogeusdt",
-            "volatility_threshold": 0.2
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "solusdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.2
         },
         {
             "symbol": "dotusdt",
@@ -39,11 +39,11 @@
         },
         {
             "symbol": "linkusdt",
-            "volatility_threshold": 0.1
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "uniusdt",
-            "volatility_threshold": 0.2
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "atomusdt",
@@ -55,7 +55,7 @@
         },
         {
             "symbol": "filusdt",
-            "volatility_threshold": 0.2
+            "volatility_threshold": 0.5
         },
         {
             "symbol": "xtzusdt",
