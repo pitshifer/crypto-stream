@@ -6,8 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	reconnectMinDelay = 1 * time.Second
+	reconnectMaxDelay = 30 * time.Second
 )
 
 type TradeEvent struct {
@@ -33,7 +39,6 @@ func (t TradeEvent) LogValue() slog.Value {
 type Client struct {
 	host  string
 	conns map[string]*websocket.Conn
-	feed  map[string]chan TradeEvent
 
 	mu sync.Mutex
 }
@@ -42,32 +47,27 @@ func NewClient(host string) *Client {
 	return &Client{
 		host:  host,
 		conns: make(map[string]*websocket.Conn),
-		feed:  make(map[string]chan TradeEvent),
 	}
 }
 
-func (c *Client) connect(ctx context.Context, symbol string) error {
-	if conn, ok := c.conns[symbol]; ok && conn != nil {
-		_ = c.Close(symbol)
-	}
-
+func (c *Client) dial(ctx context.Context, symbol string) (*websocket.Conn, error) {
 	url := fmt.Sprintf("wss://%s/ws/%s@trade", c.host, symbol)
 	conn, resp, err := websocket.DefaultDialer.DialContext(ctx, url, nil)
 	if err != nil {
 		if resp != nil {
-			slog.Error("handshake failed", "status", resp.Status)
+			slog.Error("handshake failed", "status", resp.Status, "symbol", symbol, "error", err)
 		}
-		return err
+		return nil, err
 	}
 
 	slog.Info("connected, listening for trades", "symbol", symbol)
+	return conn, nil
+}
 
+func (c *Client) setConnect(symbol string, conn *websocket.Conn) {
 	c.mu.Lock()
 	c.conns[symbol] = conn
-	c.feed[symbol] = make(chan TradeEvent, 100)
 	c.mu.Unlock()
-
-	return nil
 }
 
 func (c *Client) Close(symbol string) error {
@@ -81,58 +81,87 @@ func (c *Client) Close(symbol string) error {
 }
 
 func (c *Client) Listen(ctx context.Context, symbol string) (<-chan TradeEvent, error) {
-	var conn *websocket.Conn
-	var feed chan TradeEvent
-
-	c.mu.Lock()
-	conn, ok := c.conns[symbol]
-	c.mu.Unlock()
-
-	if !ok || conn == nil {
-		err := c.connect(ctx, symbol)
-		if err != nil {
-			return nil, err
-		}
+	conn, err := c.dial(ctx, symbol)
+	if err != nil {
+		return nil, err
 	}
+	c.setConnect(symbol, conn)
 
-	c.mu.Lock()
-	conn = c.conns[symbol]
-	feed = c.feed[symbol]
-	c.mu.Unlock()
-
-	var tradeEvent TradeEvent
-
-	go func() {
-		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
-				if ctx.Err() != nil {
-					return // context canceled, exit the goroutine
-				}
-				slog.Error("read error", "error", err)
-				return
-			}
-
-			if err := json.Unmarshal(msg, &tradeEvent); err != nil {
-				slog.Error("unmarshal error", "error", err)
-				continue
-			}
-
-			select {
-			case feed <- tradeEvent:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	feed := make(chan TradeEvent, 100)
 
 	go func() {
 		<-ctx.Done()
 		if err := c.Close(symbol); err != nil {
 			slog.Error("error closing connection", "error", err)
 		}
-		close(feed)
 	}()
 
+	go c.readLoop(ctx, symbol, conn, feed)
+
 	return feed, nil
+}
+
+func (c *Client) readLoop(ctx context.Context, symbol string, conn *websocket.Conn, feed chan<- TradeEvent) {
+	defer close(feed)
+
+	for {
+		err := c.readMessages(ctx, conn, feed)
+		if ctx.Err() != nil {
+			return
+		}
+		slog.Warn("read loop error", "symbol", symbol, "error", err)
+
+		newConn, ok := c.reconnect(ctx, symbol, reconnectMinDelay)
+		if !ok {
+			return
+		}
+		conn = newConn
+	}
+}
+
+func (c *Client) readMessages(ctx context.Context, conn *websocket.Conn, feed chan<- TradeEvent) error {
+	var tradeEvent TradeEvent
+
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			slog.Error("read error", "error", err)
+			return err
+		}
+
+		if err := json.Unmarshal(msg, &tradeEvent); err != nil {
+			slog.Error("unmarshal error", "error", err)
+			continue
+		}
+
+		select {
+		case feed <- tradeEvent:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
+func (c *Client) reconnect(ctx context.Context, symbol string, delay time.Duration) (*websocket.Conn, bool) {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, false
+		case <-time.After(delay):
+		}
+
+		conn, err := c.dial(ctx, symbol)
+		if err != nil {
+			slog.Error("reconnect failed", "symbol", symbol, "error", err)
+			delay = delay * 2
+			delay = min(delay, reconnectMaxDelay)
+			continue
+		}
+
+		c.setConnect(symbol, conn)
+		return conn, true
+	}
 }
