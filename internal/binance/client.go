@@ -128,7 +128,6 @@ func (c *Client) readMessages(ctx context.Context, conn *websocket.Conn, feed ch
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			slog.Error("read error", "error", err)
 			return err
 		}
 
