@@ -22,7 +22,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StreamerService_GetSymbols_FullMethodName = "/api.v1.StreamerService/GetSymbols"
+	StreamerService_GetSymbols_FullMethodName = "/cryptostream.api.v1.StreamerService/GetSymbols"
 )
 
 // StreamerServiceClient is the client API for StreamerService service.
@@ -32,7 +32,6 @@ const (
 // StreamerService — внешний API приложения crypto-stream.
 type StreamerServiceClient interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
-	// приложение (задаются статически в конфиге при старте).
 	GetSymbols(ctx context.Context, in *GetSymbolsRequest, opts ...grpc.CallOption) (*GetSymbolsResponse, error)
 }
 
@@ -61,7 +60,6 @@ func (c *streamerServiceClient) GetSymbols(ctx context.Context, in *GetSymbolsRe
 // StreamerService — внешний API приложения crypto-stream.
 type StreamerServiceServer interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
-	// приложение (задаются статически в конфиге при старте).
 	GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error)
 	mustEmbedUnimplementedStreamerServiceServer()
 }
@@ -119,7 +117,7 @@ func _StreamerService_GetSymbols_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var StreamerService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.v1.StreamerService",
+	ServiceName: "cryptostream.api.v1.StreamerService",
 	HandlerType: (*StreamerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

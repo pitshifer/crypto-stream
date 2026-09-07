@@ -111,13 +111,13 @@ var File_api_v1_api_proto protoreflect.FileDescriptor
 
 const file_api_v1_api_proto_rawDesc = "" +
 	"\n" +
-	"\x10api/v1/api.proto\x12\x06api.v1\"\x13\n" +
+	"\x10api/v1/api.proto\x12\x13cryptostream.api.v1\"\x13\n" +
 	"\x11GetSymbolsRequest\".\n" +
 	"\x12GetSymbolsResponse\x12\x18\n" +
-	"\asymbols\x18\x01 \x03(\tR\asymbols2V\n" +
-	"\x0fStreamerService\x12C\n" +
+	"\asymbols\x18\x01 \x03(\tR\asymbols2p\n" +
+	"\x0fStreamerService\x12]\n" +
 	"\n" +
-	"GetSymbols\x12\x19.api.v1.GetSymbolsRequest\x1a\x1a.api.v1.GetSymbolsResponseBDZBgithub.com/pitshifer/crypto-stream/internal/gen/proto/api/v1;apiv1b\x06proto3"
+	"GetSymbols\x12&.cryptostream.api.v1.GetSymbolsRequest\x1a'.cryptostream.api.v1.GetSymbolsResponseBDZBgithub.com/pitshifer/crypto-stream/internal/gen/proto/api/v1;apiv1b\x06proto3"
 
 var (
 	file_api_v1_api_proto_rawDescOnce sync.Once
@@ -133,12 +133,12 @@ func file_api_v1_api_proto_rawDescGZIP() []byte {
 
 var file_api_v1_api_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_api_proto_goTypes = []any{
-	(*GetSymbolsRequest)(nil),  // 0: api.v1.GetSymbolsRequest
-	(*GetSymbolsResponse)(nil), // 1: api.v1.GetSymbolsResponse
+	(*GetSymbolsRequest)(nil),  // 0: cryptostream.api.v1.GetSymbolsRequest
+	(*GetSymbolsResponse)(nil), // 1: cryptostream.api.v1.GetSymbolsResponse
 }
 var file_api_v1_api_proto_depIdxs = []int32{
-	0, // 0: api.v1.StreamerService.GetSymbols:input_type -> api.v1.GetSymbolsRequest
-	1, // 1: api.v1.StreamerService.GetSymbols:output_type -> api.v1.GetSymbolsResponse
+	0, // 0: cryptostream.api.v1.StreamerService.GetSymbols:input_type -> cryptostream.api.v1.GetSymbolsRequest
+	1, // 1: cryptostream.api.v1.StreamerService.GetSymbols:output_type -> cryptostream.api.v1.GetSymbolsResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
