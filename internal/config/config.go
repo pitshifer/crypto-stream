@@ -14,6 +14,8 @@ type Config struct {
 
 	KafkaBrokers    []string `json:"kafka_brokers"`
 	KafkaAlertTopic string   `json:"kafka_alert_topic"`
+
+	GrpcAddr string `json:"grpc_addr"`
 }
 
 type SymbolConfig struct {
@@ -33,4 +35,12 @@ func NewConfig(path string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func (c *Config) GetSymbols() []string {
+	symbols := make([]string, len(c.Symbols))
+	for i, s := range c.Symbols {
+		symbols[i] = s.Symbol
+	}
+	return symbols
 }

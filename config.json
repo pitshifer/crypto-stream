@@ -67,5 +67,7 @@
     "log_format": "json",
 
     "kafka_brokers": ["kafka:9092"],
-    "kafka_alert_topic": "volatility"
+    "kafka_alert_topic": "volatility",
+
+    "grpc_addr": ":50051"
 }

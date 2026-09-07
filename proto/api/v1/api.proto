@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+// Пакет версионируем (v1), чтобы можно было завести v2 без ломающих
+// изменений для существующих клиентов.
+package cryptostream.api.v1;
+
+// Путь и имя сгенерированного Go-пакета: buf сложит .pb.go сюда.
+option go_package = "github.com/pitshifer/crypto-stream/internal/gen/proto/api/v1;apiv1";
+
+// StreamerService — внешний API приложения crypto-stream.
+service StreamerService {
+  // GetSymbols возвращает список торговых пар, за которыми сейчас следит
+  rpc GetSymbols(GetSymbolsRequest) returns (GetSymbolsResponse);
+}
+
+// GetSymbolsRequest пуст: метод не принимает параметров, возвращает
+// весь список прослушиваемых пар целиком.
+message GetSymbolsRequest {}
+
+message GetSymbolsResponse {
+  // symbols — список тикеров в формате Binance, например "BTCUSDT".
+  repeated string symbols = 1;
+}

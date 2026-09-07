@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"math"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -17,7 +18,10 @@ import (
 	"github.com/pitshifer/crypto-stream/internal/aggregator"
 	"github.com/pitshifer/crypto-stream/internal/binance"
 	"github.com/pitshifer/crypto-stream/internal/config"
+	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
+	"github.com/pitshifer/crypto-stream/internal/grpcserver"
 	"github.com/pitshifer/crypto-stream/internal/notify"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -56,6 +60,22 @@ func main() {
 
 	client := binance.NewClient(cfg.BinanceWsHost)
 	kafkaProducer := notify.NewProducer(cfg.KafkaBrokers, cfg.KafkaAlertTopic)
+
+	lis, err := net.Listen("tcp", cfg.GrpcAddr)
+	if err != nil {
+		slog.Error("failed to listen gRPC", "error", err)
+		os.Exit(1)
+	}
+
+	grpcSrv := grpc.NewServer()
+	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(cfg.GetSymbols()))
+
+	go func() {
+		slog.Info("gRPC server listening on", "address", cfg.GrpcAddr)
+		if err := grpcSrv.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+			slog.Error("gRPC server error", "error", err)
+		}
+	}()
 
 	for _, symbolCfg := range cfg.Symbols {
 		go func() {
@@ -118,6 +138,8 @@ func main() {
 
 	<-ctx.Done()
 	slog.Info("shutting down...")
+
+	grpcSrv.GracefulStop()
 
 	done := make(chan struct{})
 	go func() {
