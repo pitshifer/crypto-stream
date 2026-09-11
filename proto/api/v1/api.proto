@@ -11,6 +11,7 @@ option go_package = "github.com/pitshifer/crypto-stream/internal/gen/proto/api/v
 service StreamerService {
   // GetSymbols возвращает список торговых пар, за которыми сейчас следит
   rpc GetSymbols(GetSymbolsRequest) returns (GetSymbolsResponse);
+  rpc GetVolatility(GetVolatilityRequest) returns (GetVolatilityResponse);
 }
 
 // GetSymbolsRequest пуст: метод не принимает параметров, возвращает
@@ -20,4 +21,15 @@ message GetSymbolsRequest {}
 message GetSymbolsResponse {
   // symbols — список тикеров в формате Binance, например "BTCUSDT".
   repeated string symbols = 1;
+}
+
+message GetVolatilityRequest {
+  // symbol — тикер торговой пары в формате Binance, например "BTCUSDT".
+  string symbol = 1;
+}
+
+message GetVolatilityResponse {
+  string symbol = 1;
+  // volatility — волатильность торговой пары за последние 24 часа в процентах, например 0.5 означает 0.5%.
+  double volatility = 2;
 }

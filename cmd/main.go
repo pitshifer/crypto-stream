@@ -21,6 +21,7 @@ import (
 	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
 	"github.com/pitshifer/crypto-stream/internal/grpcserver"
 	"github.com/pitshifer/crypto-stream/internal/notify"
+	"github.com/pitshifer/crypto-stream/internal/volatility"
 	"google.golang.org/grpc"
 )
 
@@ -60,6 +61,7 @@ func main() {
 
 	client := binance.NewClient(cfg.BinanceWsHost)
 	kafkaProducer := notify.NewProducer(cfg.KafkaBrokers, cfg.KafkaAlertTopic)
+	volStorage := volatility.NewStorage()
 
 	lis, err := net.Listen("tcp", cfg.GrpcAddr)
 	if err != nil {
@@ -68,7 +70,7 @@ func main() {
 	}
 
 	grpcSrv := grpc.NewServer()
-	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(cfg.GetSymbols()))
+	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(cfg.GetSymbols(), volStorage))
 
 	go func() {
 		slog.Info("gRPC server listening on", "address", cfg.GrpcAddr)
@@ -96,6 +98,7 @@ func main() {
 				case <-ticker.C:
 					volatility := aggregator.Volatility()
 					roundedVolatility := math.Round(volatility*100) / 100
+					volStorage.Set(symbolCfg.Symbol, roundedVolatility)
 					if roundedVolatility >= symbolCfg.VolatilityThreshold {
 						alert := notify.Alert{
 							Symbol:     symbolCfg.Symbol,

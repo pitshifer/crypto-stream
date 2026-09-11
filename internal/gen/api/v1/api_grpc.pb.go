@@ -22,7 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StreamerService_GetSymbols_FullMethodName = "/cryptostream.api.v1.StreamerService/GetSymbols"
+	StreamerService_GetSymbols_FullMethodName    = "/cryptostream.api.v1.StreamerService/GetSymbols"
+	StreamerService_GetVolatility_FullMethodName = "/cryptostream.api.v1.StreamerService/GetVolatility"
 )
 
 // StreamerServiceClient is the client API for StreamerService service.
@@ -33,6 +34,7 @@ const (
 type StreamerServiceClient interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(ctx context.Context, in *GetSymbolsRequest, opts ...grpc.CallOption) (*GetSymbolsResponse, error)
+	GetVolatility(ctx context.Context, in *GetVolatilityRequest, opts ...grpc.CallOption) (*GetVolatilityResponse, error)
 }
 
 type streamerServiceClient struct {
@@ -53,6 +55,16 @@ func (c *streamerServiceClient) GetSymbols(ctx context.Context, in *GetSymbolsRe
 	return out, nil
 }
 
+func (c *streamerServiceClient) GetVolatility(ctx context.Context, in *GetVolatilityRequest, opts ...grpc.CallOption) (*GetVolatilityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVolatilityResponse)
+	err := c.cc.Invoke(ctx, StreamerService_GetVolatility_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StreamerServiceServer is the server API for StreamerService service.
 // All implementations must embed UnimplementedStreamerServiceServer
 // for forward compatibility.
@@ -61,6 +73,7 @@ func (c *streamerServiceClient) GetSymbols(ctx context.Context, in *GetSymbolsRe
 type StreamerServiceServer interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error)
+	GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error)
 	mustEmbedUnimplementedStreamerServiceServer()
 }
 
@@ -73,6 +86,9 @@ type UnimplementedStreamerServiceServer struct{}
 
 func (UnimplementedStreamerServiceServer) GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSymbols not implemented")
+}
+func (UnimplementedStreamerServiceServer) GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetVolatility not implemented")
 }
 func (UnimplementedStreamerServiceServer) mustEmbedUnimplementedStreamerServiceServer() {}
 func (UnimplementedStreamerServiceServer) testEmbeddedByValue()                         {}
@@ -113,6 +129,24 @@ func _StreamerService_GetSymbols_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StreamerService_GetVolatility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVolatilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamerServiceServer).GetVolatility(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StreamerService_GetVolatility_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamerServiceServer).GetVolatility(ctx, req.(*GetVolatilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StreamerService_ServiceDesc is the grpc.ServiceDesc for StreamerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -123,6 +157,10 @@ var StreamerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSymbols",
 			Handler:    _StreamerService_GetSymbols_Handler,
+		},
+		{
+			MethodName: "GetVolatility",
+			Handler:    _StreamerService_GetVolatility_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
