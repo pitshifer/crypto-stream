@@ -50,7 +50,7 @@ func (s *Server) GetVolatility(ctx context.Context, req *apiv1.GetVolatilityRequ
 func (s *Server) Quote(req *apiv1.QuoteRequest, stream apiv1.StreamerService_QuoteServer) error {
 	symbol := req.GetSymbol()
 	if !slices.Contains(s.symbols, symbol) {
-		return status.Errorf(codes.NotFound, "symbol %q not foound", symbol)
+		return status.Errorf(codes.NotFound, "symbol %q not found", symbol)
 	}
 
 	ch, cancel := s.broadcaster.Subscribe(symbol)
