@@ -21,6 +21,7 @@ import (
 	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
 	"github.com/pitshifer/crypto-stream/internal/grpcserver"
 	"github.com/pitshifer/crypto-stream/internal/notify"
+	"github.com/pitshifer/crypto-stream/internal/quote"
 	"github.com/pitshifer/crypto-stream/internal/volatility"
 	"google.golang.org/grpc"
 )
@@ -62,6 +63,7 @@ func main() {
 	client := binance.NewClient(cfg.BinanceWsHost)
 	kafkaProducer := notify.NewProducer(cfg.KafkaBrokers, cfg.KafkaAlertTopic)
 	volStorage := volatility.NewStorage()
+	broadcaster := quote.NewBroadcaster()
 
 	lis, err := net.Listen("tcp", cfg.GrpcAddr)
 	if err != nil {
@@ -70,7 +72,7 @@ func main() {
 	}
 
 	grpcSrv := grpc.NewServer()
-	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(cfg.GetSymbols(), volStorage))
+	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(ctx, cfg.GetSymbols(), volStorage, broadcaster))
 
 	go func() {
 		slog.Info("gRPC server listening on", "address", cfg.GrpcAddr)
@@ -125,6 +127,10 @@ func main() {
 						continue
 					}
 					aggregator.AddPrice(price, time.UnixMilli(event.TradeTime))
+					broadcaster.Publish(symbolCfg.Symbol, quote.Quote{
+						Price:     price,
+						TradeTime: time.UnixMilli(event.TradeTime),
+					})
 
 					slog.Debug("trade event",
 						"symbol", symbolCfg.Symbol,

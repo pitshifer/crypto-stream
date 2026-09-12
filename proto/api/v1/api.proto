@@ -12,6 +12,7 @@ service StreamerService {
   // GetSymbols возвращает список торговых пар, за которыми сейчас следит
   rpc GetSymbols(GetSymbolsRequest) returns (GetSymbolsResponse);
   rpc GetVolatility(GetVolatilityRequest) returns (GetVolatilityResponse);
+  rpc Quote(QuoteRequest) returns (stream QuoteResponse);
 }
 
 // GetSymbolsRequest пуст: метод не принимает параметров, возвращает
@@ -32,4 +33,18 @@ message GetVolatilityResponse {
   string symbol = 1;
   // volatility — волатильность торговой пары за последние 24 часа в процентах, например 0.5 означает 0.5%.
   double volatility = 2;
+}
+
+message QuoteRequest {
+  // symbol — тикер торговой пары в формате Binance, например "BTCUSDT".
+  string symbol = 1;
+}
+
+message QuoteResponse {
+  // symbol — тикер торговой пары в формате Binance, например "BTCUSDT".
+  string symbol = 1;
+  // price — текущая цена торговой пары в USDT.
+  double price = 2;
+  // trade_time — время получения котировки в формате Unix timestamp (секунды с начала эпохи).
+  int64 trade_time = 3;
 }

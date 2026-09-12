@@ -2,8 +2,10 @@ package grpcserver
 
 import (
 	"context"
+	"slices"
 
 	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
+	"github.com/pitshifer/crypto-stream/internal/quote"
 	"github.com/pitshifer/crypto-stream/internal/volatility"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -11,14 +13,18 @@ import (
 
 type Server struct {
 	apiv1.UnimplementedStreamerServiceServer
-	symbols    []string
-	volStorage *volatility.Storage
+	symbols     []string
+	volStorage  *volatility.Storage
+	broadcaster *quote.Broadcaster
+	ctx         context.Context
 }
 
-func NewServer(symbols []string, volStorage *volatility.Storage) *Server {
+func NewServer(ctx context.Context, symbols []string, volStorage *volatility.Storage, broadcaster *quote.Broadcaster) *Server {
 	return &Server{
-		symbols:    symbols,
-		volStorage: volStorage,
+		symbols:     symbols,
+		volStorage:  volStorage,
+		broadcaster: broadcaster,
+		ctx:         ctx,
 	}
 }
 
@@ -39,4 +45,34 @@ func (s *Server) GetVolatility(ctx context.Context, req *apiv1.GetVolatilityRequ
 		Volatility: volatility,
 		Symbol:     symbol,
 	}, nil
+}
+
+func (s *Server) Quote(req *apiv1.QuoteRequest, stream apiv1.StreamerService_QuoteServer) error {
+	symbol := req.GetSymbol()
+	if !slices.Contains(s.symbols, symbol) {
+		return status.Errorf(codes.NotFound, "symbol %q not foound", symbol)
+	}
+
+	ch, cancel := s.broadcaster.Subscribe(symbol)
+	defer cancel()
+
+	for {
+		select {
+		case q := <-ch:
+			err := stream.Send(&apiv1.QuoteResponse{
+				Symbol:    symbol,
+				Price:     q.Price,
+				TradeTime: q.TradeTime.Unix(),
+			})
+			if err != nil {
+				return err
+			}
+
+		case <-stream.Context().Done():
+			return nil
+
+		case <-s.ctx.Done():
+			return nil
+		}
+	}
 }

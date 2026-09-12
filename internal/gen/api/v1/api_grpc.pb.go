@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	StreamerService_GetSymbols_FullMethodName    = "/cryptostream.api.v1.StreamerService/GetSymbols"
 	StreamerService_GetVolatility_FullMethodName = "/cryptostream.api.v1.StreamerService/GetVolatility"
+	StreamerService_Quote_FullMethodName         = "/cryptostream.api.v1.StreamerService/Quote"
 )
 
 // StreamerServiceClient is the client API for StreamerService service.
@@ -35,6 +36,7 @@ type StreamerServiceClient interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(ctx context.Context, in *GetSymbolsRequest, opts ...grpc.CallOption) (*GetSymbolsResponse, error)
 	GetVolatility(ctx context.Context, in *GetVolatilityRequest, opts ...grpc.CallOption) (*GetVolatilityResponse, error)
+	Quote(ctx context.Context, in *QuoteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QuoteResponse], error)
 }
 
 type streamerServiceClient struct {
@@ -65,6 +67,25 @@ func (c *streamerServiceClient) GetVolatility(ctx context.Context, in *GetVolati
 	return out, nil
 }
 
+func (c *streamerServiceClient) Quote(ctx context.Context, in *QuoteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QuoteResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &StreamerService_ServiceDesc.Streams[0], StreamerService_Quote_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[QuoteRequest, QuoteResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type StreamerService_QuoteClient = grpc.ServerStreamingClient[QuoteResponse]
+
 // StreamerServiceServer is the server API for StreamerService service.
 // All implementations must embed UnimplementedStreamerServiceServer
 // for forward compatibility.
@@ -74,6 +95,7 @@ type StreamerServiceServer interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error)
 	GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error)
+	Quote(*QuoteRequest, grpc.ServerStreamingServer[QuoteResponse]) error
 	mustEmbedUnimplementedStreamerServiceServer()
 }
 
@@ -89,6 +111,9 @@ func (UnimplementedStreamerServiceServer) GetSymbols(context.Context, *GetSymbol
 }
 func (UnimplementedStreamerServiceServer) GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVolatility not implemented")
+}
+func (UnimplementedStreamerServiceServer) Quote(*QuoteRequest, grpc.ServerStreamingServer[QuoteResponse]) error {
+	return status.Error(codes.Unimplemented, "method Quote not implemented")
 }
 func (UnimplementedStreamerServiceServer) mustEmbedUnimplementedStreamerServiceServer() {}
 func (UnimplementedStreamerServiceServer) testEmbeddedByValue()                         {}
@@ -147,6 +172,17 @@ func _StreamerService_GetVolatility_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StreamerService_Quote_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(QuoteRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(StreamerServiceServer).Quote(m, &grpc.GenericServerStream[QuoteRequest, QuoteResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type StreamerService_QuoteServer = grpc.ServerStreamingServer[QuoteResponse]
+
 // StreamerService_ServiceDesc is the grpc.ServiceDesc for StreamerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -163,6 +199,12 @@ var StreamerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _StreamerService_GetVolatility_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Quote",
+			Handler:       _StreamerService_Quote_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/v1/api.proto",
 }
