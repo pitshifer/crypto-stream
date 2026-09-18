@@ -107,104 +107,6 @@ func (x *GetSymbolsResponse) GetSymbols() []string {
 	return nil
 }
 
-type GetVolatilityRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// symbol — тикер торговой пары в формате Binance, например "BTCUSDT".
-	Symbol        string `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetVolatilityRequest) Reset() {
-	*x = GetVolatilityRequest{}
-	mi := &file_api_v1_api_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetVolatilityRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetVolatilityRequest) ProtoMessage() {}
-
-func (x *GetVolatilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_api_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetVolatilityRequest.ProtoReflect.Descriptor instead.
-func (*GetVolatilityRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_api_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *GetVolatilityRequest) GetSymbol() string {
-	if x != nil {
-		return x.Symbol
-	}
-	return ""
-}
-
-type GetVolatilityResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Symbol string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	// volatility — волатильность торговой пары за последние 24 часа в процентах, например 0.5 означает 0.5%.
-	Volatility    float64 `protobuf:"fixed64,2,opt,name=volatility,proto3" json:"volatility,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetVolatilityResponse) Reset() {
-	*x = GetVolatilityResponse{}
-	mi := &file_api_v1_api_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetVolatilityResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetVolatilityResponse) ProtoMessage() {}
-
-func (x *GetVolatilityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_api_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetVolatilityResponse.ProtoReflect.Descriptor instead.
-func (*GetVolatilityResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_api_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *GetVolatilityResponse) GetSymbol() string {
-	if x != nil {
-		return x.Symbol
-	}
-	return ""
-}
-
-func (x *GetVolatilityResponse) GetVolatility() float64 {
-	if x != nil {
-		return x.Volatility
-	}
-	return 0
-}
-
 type QuoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// symbol — тикер торговой пары в формате Binance, например "BTCUSDT".
@@ -215,7 +117,7 @@ type QuoteRequest struct {
 
 func (x *QuoteRequest) Reset() {
 	*x = QuoteRequest{}
-	mi := &file_api_v1_api_proto_msgTypes[4]
+	mi := &file_api_v1_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -227,7 +129,7 @@ func (x *QuoteRequest) String() string {
 func (*QuoteRequest) ProtoMessage() {}
 
 func (x *QuoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_api_proto_msgTypes[4]
+	mi := &file_api_v1_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -240,7 +142,7 @@ func (x *QuoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuoteRequest.ProtoReflect.Descriptor instead.
 func (*QuoteRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_api_proto_rawDescGZIP(), []int{4}
+	return file_api_v1_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *QuoteRequest) GetSymbol() string {
@@ -264,7 +166,7 @@ type QuoteResponse struct {
 
 func (x *QuoteResponse) Reset() {
 	*x = QuoteResponse{}
-	mi := &file_api_v1_api_proto_msgTypes[5]
+	mi := &file_api_v1_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -276,7 +178,7 @@ func (x *QuoteResponse) String() string {
 func (*QuoteResponse) ProtoMessage() {}
 
 func (x *QuoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_api_proto_msgTypes[5]
+	mi := &file_api_v1_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -289,7 +191,7 @@ func (x *QuoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuoteResponse.ProtoReflect.Descriptor instead.
 func (*QuoteResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_api_proto_rawDescGZIP(), []int{5}
+	return file_api_v1_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *QuoteResponse) GetSymbol() string {
@@ -320,25 +222,17 @@ const file_api_v1_api_proto_rawDesc = "" +
 	"\x10api/v1/api.proto\x12\x13cryptostream.api.v1\"\x13\n" +
 	"\x11GetSymbolsRequest\".\n" +
 	"\x12GetSymbolsResponse\x12\x18\n" +
-	"\asymbols\x18\x01 \x03(\tR\asymbols\".\n" +
-	"\x14GetVolatilityRequest\x12\x16\n" +
-	"\x06symbol\x18\x01 \x01(\tR\x06symbol\"O\n" +
-	"\x15GetVolatilityResponse\x12\x16\n" +
-	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x1e\n" +
-	"\n" +
-	"volatility\x18\x02 \x01(\x01R\n" +
-	"volatility\"&\n" +
+	"\asymbols\x18\x01 \x03(\tR\asymbols\"&\n" +
 	"\fQuoteRequest\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\"\\\n" +
 	"\rQuoteResponse\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x14\n" +
 	"\x05price\x18\x02 \x01(\x01R\x05price\x12\x1d\n" +
 	"\n" +
-	"trade_time\x18\x03 \x01(\x03R\ttradeTime2\xaa\x02\n" +
+	"trade_time\x18\x03 \x01(\x03R\ttradeTime2\xc2\x01\n" +
 	"\x0fStreamerService\x12]\n" +
 	"\n" +
-	"GetSymbols\x12&.cryptostream.api.v1.GetSymbolsRequest\x1a'.cryptostream.api.v1.GetSymbolsResponse\x12f\n" +
-	"\rGetVolatility\x12).cryptostream.api.v1.GetVolatilityRequest\x1a*.cryptostream.api.v1.GetVolatilityResponse\x12P\n" +
+	"GetSymbols\x12&.cryptostream.api.v1.GetSymbolsRequest\x1a'.cryptostream.api.v1.GetSymbolsResponse\x12P\n" +
 	"\x05Quote\x12!.cryptostream.api.v1.QuoteRequest\x1a\".cryptostream.api.v1.QuoteResponse0\x01BDZBgithub.com/pitshifer/crypto-stream/internal/gen/proto/api/v1;apiv1b\x06proto3"
 
 var (
@@ -353,24 +247,20 @@ func file_api_v1_api_proto_rawDescGZIP() []byte {
 	return file_api_v1_api_proto_rawDescData
 }
 
-var file_api_v1_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_api_v1_api_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_api_v1_api_proto_goTypes = []any{
-	(*GetSymbolsRequest)(nil),     // 0: cryptostream.api.v1.GetSymbolsRequest
-	(*GetSymbolsResponse)(nil),    // 1: cryptostream.api.v1.GetSymbolsResponse
-	(*GetVolatilityRequest)(nil),  // 2: cryptostream.api.v1.GetVolatilityRequest
-	(*GetVolatilityResponse)(nil), // 3: cryptostream.api.v1.GetVolatilityResponse
-	(*QuoteRequest)(nil),          // 4: cryptostream.api.v1.QuoteRequest
-	(*QuoteResponse)(nil),         // 5: cryptostream.api.v1.QuoteResponse
+	(*GetSymbolsRequest)(nil),  // 0: cryptostream.api.v1.GetSymbolsRequest
+	(*GetSymbolsResponse)(nil), // 1: cryptostream.api.v1.GetSymbolsResponse
+	(*QuoteRequest)(nil),       // 2: cryptostream.api.v1.QuoteRequest
+	(*QuoteResponse)(nil),      // 3: cryptostream.api.v1.QuoteResponse
 }
 var file_api_v1_api_proto_depIdxs = []int32{
 	0, // 0: cryptostream.api.v1.StreamerService.GetSymbols:input_type -> cryptostream.api.v1.GetSymbolsRequest
-	2, // 1: cryptostream.api.v1.StreamerService.GetVolatility:input_type -> cryptostream.api.v1.GetVolatilityRequest
-	4, // 2: cryptostream.api.v1.StreamerService.Quote:input_type -> cryptostream.api.v1.QuoteRequest
-	1, // 3: cryptostream.api.v1.StreamerService.GetSymbols:output_type -> cryptostream.api.v1.GetSymbolsResponse
-	3, // 4: cryptostream.api.v1.StreamerService.GetVolatility:output_type -> cryptostream.api.v1.GetVolatilityResponse
-	5, // 5: cryptostream.api.v1.StreamerService.Quote:output_type -> cryptostream.api.v1.QuoteResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	2, // 1: cryptostream.api.v1.StreamerService.Quote:input_type -> cryptostream.api.v1.QuoteRequest
+	1, // 2: cryptostream.api.v1.StreamerService.GetSymbols:output_type -> cryptostream.api.v1.GetSymbolsResponse
+	3, // 3: cryptostream.api.v1.StreamerService.Quote:output_type -> cryptostream.api.v1.QuoteResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -387,7 +277,7 @@ func file_api_v1_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_api_proto_rawDesc), len(file_api_v1_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

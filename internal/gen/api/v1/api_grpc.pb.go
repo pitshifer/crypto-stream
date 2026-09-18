@@ -22,9 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StreamerService_GetSymbols_FullMethodName    = "/cryptostream.api.v1.StreamerService/GetSymbols"
-	StreamerService_GetVolatility_FullMethodName = "/cryptostream.api.v1.StreamerService/GetVolatility"
-	StreamerService_Quote_FullMethodName         = "/cryptostream.api.v1.StreamerService/Quote"
+	StreamerService_GetSymbols_FullMethodName = "/cryptostream.api.v1.StreamerService/GetSymbols"
+	StreamerService_Quote_FullMethodName      = "/cryptostream.api.v1.StreamerService/Quote"
 )
 
 // StreamerServiceClient is the client API for StreamerService service.
@@ -35,7 +34,6 @@ const (
 type StreamerServiceClient interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(ctx context.Context, in *GetSymbolsRequest, opts ...grpc.CallOption) (*GetSymbolsResponse, error)
-	GetVolatility(ctx context.Context, in *GetVolatilityRequest, opts ...grpc.CallOption) (*GetVolatilityResponse, error)
 	Quote(ctx context.Context, in *QuoteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QuoteResponse], error)
 }
 
@@ -51,16 +49,6 @@ func (c *streamerServiceClient) GetSymbols(ctx context.Context, in *GetSymbolsRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSymbolsResponse)
 	err := c.cc.Invoke(ctx, StreamerService_GetSymbols_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *streamerServiceClient) GetVolatility(ctx context.Context, in *GetVolatilityRequest, opts ...grpc.CallOption) (*GetVolatilityResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetVolatilityResponse)
-	err := c.cc.Invoke(ctx, StreamerService_GetVolatility_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +82,6 @@ type StreamerService_QuoteClient = grpc.ServerStreamingClient[QuoteResponse]
 type StreamerServiceServer interface {
 	// GetSymbols возвращает список торговых пар, за которыми сейчас следит
 	GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error)
-	GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error)
 	Quote(*QuoteRequest, grpc.ServerStreamingServer[QuoteResponse]) error
 	mustEmbedUnimplementedStreamerServiceServer()
 }
@@ -108,9 +95,6 @@ type UnimplementedStreamerServiceServer struct{}
 
 func (UnimplementedStreamerServiceServer) GetSymbols(context.Context, *GetSymbolsRequest) (*GetSymbolsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSymbols not implemented")
-}
-func (UnimplementedStreamerServiceServer) GetVolatility(context.Context, *GetVolatilityRequest) (*GetVolatilityResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetVolatility not implemented")
 }
 func (UnimplementedStreamerServiceServer) Quote(*QuoteRequest, grpc.ServerStreamingServer[QuoteResponse]) error {
 	return status.Error(codes.Unimplemented, "method Quote not implemented")
@@ -154,24 +138,6 @@ func _StreamerService_GetSymbols_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StreamerService_GetVolatility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVolatilityRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StreamerServiceServer).GetVolatility(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: StreamerService_GetVolatility_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StreamerServiceServer).GetVolatility(ctx, req.(*GetVolatilityRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _StreamerService_Quote_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(QuoteRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -193,10 +159,6 @@ var StreamerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSymbols",
 			Handler:    _StreamerService_GetSymbols_Handler,
-		},
-		{
-			MethodName: "GetVolatility",
-			Handler:    _StreamerService_GetVolatility_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

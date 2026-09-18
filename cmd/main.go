@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"log/slog"
-	"math"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -15,14 +14,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pitshifer/crypto-stream/internal/aggregator"
 	"github.com/pitshifer/crypto-stream/internal/binance"
 	"github.com/pitshifer/crypto-stream/internal/config"
 	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
 	"github.com/pitshifer/crypto-stream/internal/grpcserver"
-	"github.com/pitshifer/crypto-stream/internal/notify"
 	"github.com/pitshifer/crypto-stream/internal/quote"
-	"github.com/pitshifer/crypto-stream/internal/volatility"
 	"google.golang.org/grpc"
 )
 
@@ -61,8 +57,6 @@ func main() {
 	wg.Add(len(cfg.Symbols))
 
 	client := binance.NewClient(cfg.BinanceWsHost)
-	kafkaProducer := notify.NewProducer(cfg.KafkaBrokers, cfg.KafkaAlertTopic)
-	volStorage := volatility.NewStorage()
 	broadcaster := quote.NewBroadcaster()
 
 	lis, err := net.Listen("tcp", cfg.GrpcAddr)
@@ -72,7 +66,7 @@ func main() {
 	}
 
 	grpcSrv := grpc.NewServer()
-	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(ctx, cfg.GetSymbols(), volStorage, broadcaster))
+	apiv1.RegisterStreamerServiceServer(grpcSrv, grpcserver.NewServer(ctx, cfg.GetSymbols(), broadcaster))
 
 	go func() {
 		slog.Info("gRPC server listening on", "address", cfg.GrpcAddr)
@@ -91,30 +85,8 @@ func main() {
 				return
 			}
 
-			aggregator := aggregator.NewAggregator(7 * time.Minute)
-			ticker := time.NewTicker(1 * time.Minute)
-			defer ticker.Stop()
-
 			for {
 				select {
-				case <-ticker.C:
-					volatility := aggregator.Volatility()
-					roundedVolatility := math.Round(volatility*100) / 100
-					volStorage.Set(symbolCfg.Symbol, roundedVolatility)
-					if roundedVolatility >= symbolCfg.VolatilityThreshold {
-						alert := notify.Alert{
-							Symbol:     symbolCfg.Symbol,
-							Volatility: roundedVolatility,
-							Threshold:  symbolCfg.VolatilityThreshold,
-							Timestamp:  time.Now(),
-						}
-						if err := kafkaProducer.Send(ctx, alert); err != nil {
-							slog.Error("failed to send alert", "symbol", symbolCfg.Symbol, "error", err)
-						}
-					}
-
-					slog.Info("volatility", "symbol", symbolCfg.Symbol, "volatility", roundedVolatility)
-
 				case event := <-eventCh:
 					price, err := strconv.ParseFloat(event.Price, 64)
 					if err != nil {
@@ -126,7 +98,6 @@ func main() {
 						slog.Error("parse quantity error", "symbol", symbolCfg.Symbol, "error", err)
 						continue
 					}
-					aggregator.AddPrice(price, time.UnixMilli(event.TradeTime))
 					broadcaster.Publish(symbolCfg.Symbol, quote.Quote{
 						Price:     price,
 						TradeTime: time.UnixMilli(event.TradeTime),
@@ -161,9 +132,5 @@ func main() {
 		slog.Info("all goroutines finished")
 	case <-time.After(5 * time.Second):
 		slog.Warn("shutdown timer exceeded, forcing exit")
-	}
-
-	if err := kafkaProducer.Close(); err != nil {
-		slog.Error("failed to close kafka producer", "error", err)
 	}
 }

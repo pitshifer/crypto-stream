@@ -6,7 +6,6 @@ import (
 
 	apiv1 "github.com/pitshifer/crypto-stream/internal/gen/api/v1"
 	"github.com/pitshifer/crypto-stream/internal/quote"
-	"github.com/pitshifer/crypto-stream/internal/volatility"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,15 +13,13 @@ import (
 type Server struct {
 	apiv1.UnimplementedStreamerServiceServer
 	symbols     []string
-	volStorage  *volatility.Storage
 	broadcaster *quote.Broadcaster
 	ctx         context.Context
 }
 
-func NewServer(ctx context.Context, symbols []string, volStorage *volatility.Storage, broadcaster *quote.Broadcaster) *Server {
+func NewServer(ctx context.Context, symbols []string, broadcaster *quote.Broadcaster) *Server {
 	return &Server{
 		symbols:     symbols,
-		volStorage:  volStorage,
 		broadcaster: broadcaster,
 		ctx:         ctx,
 	}
@@ -31,19 +28,6 @@ func NewServer(ctx context.Context, symbols []string, volStorage *volatility.Sto
 func (s *Server) GetSymbols(context.Context, *apiv1.GetSymbolsRequest) (*apiv1.GetSymbolsResponse, error) {
 	return &apiv1.GetSymbolsResponse{
 		Symbols: s.symbols,
-	}, nil
-}
-
-func (s *Server) GetVolatility(ctx context.Context, req *apiv1.GetVolatilityRequest) (*apiv1.GetVolatilityResponse, error) {
-	symbol := req.GetSymbol()
-	volatility, ok := s.volStorage.Get(symbol)
-	if !ok {
-		return nil, status.Errorf(codes.NotFound, "symbol %q not found", symbol)
-	}
-
-	return &apiv1.GetVolatilityResponse{
-		Volatility: volatility,
-		Symbol:     symbol,
 	}, nil
 }
 
