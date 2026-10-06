@@ -7,7 +7,6 @@ services:
       - 50051:50051
     networks:
       - default
-      - kafka-net
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.15.0
@@ -20,10 +19,3 @@ services:
     depends_on:
       - cryptostream
     command: ["--strict.perms=false"]
-
-networks:
-  # kafka живёт в отдельном проекте вне этого репозитория;
-  # сеть kafka-net должна быть поднята им заранее, здесь только подключаемся к ней
-  kafka-net:
-    external: true
-    name: kafka-net
