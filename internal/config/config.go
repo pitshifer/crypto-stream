@@ -81,3 +81,6 @@ func (c *Config) GetSymbols() []string {
 	}
 	return symbols
 }
+
+
+func  unusedBadlyFormatted( ) {}
