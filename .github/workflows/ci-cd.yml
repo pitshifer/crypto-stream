@@ -1,0 +1,58 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Ручной запуск кнопкой "Run workflow" или `gh workflow run`.
+  # Нужен только для откат-деплоя уже собранного образа (задача 7).
+  workflow_dispatch:
+    inputs:
+      # Какой образ деплоить при ручном запуске. Доступен как inputs.image_tag.
+      image_tag:
+        description: "Тег образа для деплоя, например sha-abc1234"
+        type: string
+        required: false
+
+# Не даёт двум запускам для одной ветки идти одновременно.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Условие запуска задачи. При ручном запуске образ уже собран
+    # и протестирован, поэтому тесты пропускаем.
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      # Скачивает код репозитория на виртуальную машину (по умолчанию она пустая).
+      - uses: actions/checkout@v4
+
+      # Устанавливает Go. Версия берётся из go.mod, чтобы не дублировать её здесь.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Проверка форматирования кода.
+      # gofmt -l выводит список файлов, которые отформатированы не по gofmt,
+      # но сам всегда завершается с кодом 0. Поэтому падение делаем вручную:
+      # если список непустой — печатаем его и выходим с кодом 1.
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      # Бинарник никуда не сохраняется — это только проверка сборки.
+      - name: Build
+        run: go build ./...
