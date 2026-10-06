@@ -1,0 +1,11 @@
+.git
+crypto-stream
+.vscode
+.claude
+compose*.yml
+*.md
+docs
+.github
+Makefile
+buf*.yaml
+config.json

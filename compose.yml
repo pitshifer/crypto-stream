@@ -5,6 +5,8 @@ services:
       dockerfile: ./docker/crypto-stream/Dockerfile
     ports:
       - 50051:50051
+    volumes:
+      - ./config.json:/app/config.json:ro
     networks:
       - default
 
