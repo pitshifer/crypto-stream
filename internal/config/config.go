@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -31,7 +33,45 @@ func NewConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
+	if errs := cfg.validate(); len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+
 	return &cfg, nil
+}
+
+func (c *Config) validate() []error {
+	var ResultErrors []error
+
+	if c.BinanceWsHost == "" {
+		ResultErrors = append(ResultErrors, errors.New("binance_ws_host is required"))
+	}
+
+	if len(c.Symbols) == 0 {
+		ResultErrors = append(ResultErrors, errors.New("symbols list is empty"))
+	}
+
+	if c.GrpcAddr == "" {
+		ResultErrors = append(ResultErrors, errors.New("grpc_addr is required"))
+	}
+
+	symbolsMap := make(map[string]struct{})
+	for i, sc := range c.Symbols {
+		if sc.Symbol == "" {
+			ResultErrors = append(ResultErrors, fmt.Errorf("symbols[%d][symbol] cannot be empty", i))
+		}
+
+		if sc.VolatilityThreshold <= 0 {
+			ResultErrors = append(ResultErrors, fmt.Errorf("symbols[%d][volatility_threshold] (%s) cannot be zero or negative", i, sc.Symbol))
+		}
+
+		if _, ok := symbolsMap[sc.Symbol]; ok {
+			ResultErrors = append(ResultErrors, fmt.Errorf("symbols[%d][symbol] (%s) is duplicated", i, sc.Symbol))
+		}
+		symbolsMap[sc.Symbol] = struct{}{}
+	}
+
+	return ResultErrors
 }
 
 func (c *Config) GetSymbols() []string {
