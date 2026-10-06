@@ -12,9 +12,6 @@ type Config struct {
 	LogLevel      slog.Level     `json:"log_level"`
 	LogFormat     string         `json:"log_format"`
 
-	KafkaBrokers    []string `json:"kafka_brokers"`
-	KafkaAlertTopic string   `json:"kafka_alert_topic"`
-
 	GrpcAddr string `json:"grpc_addr"`
 }
 
