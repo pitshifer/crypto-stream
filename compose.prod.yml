@@ -1,0 +1,15 @@
+services:
+  cryptostream:
+    image: ghcr.io/pitshifer/crypto-stream:${IMAGE_TAG}
+    ports:
+      - "${GRPC_BIND_ADDR}:50051:50051"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - default
