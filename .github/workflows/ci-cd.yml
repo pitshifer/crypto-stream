@@ -107,3 +107,98 @@ jobs:
           # слои стадии builder, а не только итоговый образ.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-push
+    # Грабля: если зависимость из needs пропущена (а при workflow_dispatch
+    # build-push всегда пропущена), задача по умолчанию тоже пропускается —
+    # молча, с зелёным пайплайном. !cancelled() заставляет условие
+    # вычисляться в любом случае, а дальше мы сами разрешаем два сценария:
+    # ручной откат или успешная сборка после push в main.
+    if: >-
+      !cancelled() &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && needs.build-push.result == 'success'))
+    runs-on: ubuntu-latest
+    env:
+      # При ручном запуске — тег из параметра, иначе — свежесобранный образ.
+      # Конструкция `a && b || c` — тернарный оператор в выражениях Actions.
+      IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || needs.build-push.outputs.image_tag }}
+      GRPC_BIND_ADDR: ${{ vars.GRPC_BIND_ADDR }}
+      DEPLOY_DIR: /opt/crypto-stream
+    steps:
+      # Нужен только ради compose.prod.yml — исходники на сервер не попадают.
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host vps
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Copy compose file
+        run: scp compose.prod.yml "vps:$DEPLOY_DIR/compose.prod.yml"
+
+      - name: Write .env
+        run: |
+          printf 'IMAGE_TAG=%s\nGRPC_BIND_ADDR=%s\n' "$IMAGE_TAG" "$GRPC_BIND_ADDR" \
+            | ssh vps "cat > $DEPLOY_DIR/.env"
+
+      # Ловит пустой IMAGE_TAG / GRPC_BIND_ADDR (см. ${VAR:?} в compose.prod.yml)
+      # до того, как работающий контейнер будет остановлен.
+      - name: Validate compose config
+        run: ssh vps "cd $DEPLOY_DIR && docker compose -f compose.prod.yml config >/dev/null"
+
+      - name: Pull and restart
+        run: |
+          ssh vps "set -e
+            cd $DEPLOY_DIR
+            docker compose -f compose.prod.yml pull
+            docker compose -f compose.prod.yml up -d
+            docker image prune -f"
+
+      # up -d возвращает 0, даже если контейнер упал через секунду.
+      # Одного статуса running мало: при restart: unless-stopped падающий
+      # контейнер перезапускается по кругу и в момент проверки вполне может
+      # оказаться running. Поэтому дополнительно требуем RestartCount == 0.
+      # Heredoc в кавычках ('EOF') не раскрывает $ локально — скрипт
+      # уходит на сервер как есть, каталог передаётся аргументом $1.
+      - name: Check container is running
+        run: |
+          sleep 10
+          ssh vps bash -s -- "$DEPLOY_DIR" <<'EOF'
+          set -e
+          cd "$1"
+          id=$(docker compose -f compose.prod.yml ps -aq cryptostream)
+          if [ -z "$id" ]; then
+            echo "::error::container cryptostream not found"
+            exit 1
+          fi
+          read -r status restarts <<< "$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' "$id")"
+          echo "status=$status restarts=$restarts"
+          if [ "$status" != "running" ] || [ "$restarts" -ne 0 ]; then
+            echo "::error::container is not healthy: status=$status restarts=$restarts"
+            exit 1
+          fi
+          EOF
+
+      # !cancelled(): логи нужны и тогда, когда проверка выше упала —
+      # именно в этом случае в них ошибка валидации конфига.
+      - name: Show logs
+        if: ${{ !cancelled() }}
+        run: ssh vps "cd $DEPLOY_DIR && docker compose -f compose.prod.yml logs --tail 30"

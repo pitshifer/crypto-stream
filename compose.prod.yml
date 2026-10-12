@@ -1,8 +1,12 @@
 services:
   cryptostream:
-    image: ghcr.io/pitshifer/crypto-stream:${IMAGE_TAG}
+    # ${VAR:?msg} — переменная обязательна: пустая или отсутствующая
+    # роняет любую команду compose (в том числе `config`) с текстом msg.
+    # Без этого пустой IMAGE_TAG молча даёт битую ссылку на образ,
+    # а пустой GRPC_BIND_ADDR — публикацию порта на всех интерфейсах.
+    image: ghcr.io/pitshifer/crypto-stream:${IMAGE_TAG:?IMAGE_TAG is required}
     ports:
-      - "${GRPC_BIND_ADDR}:50051:50051"
+      - "${GRPC_BIND_ADDR:?GRPC_BIND_ADDR is required}:50051:50051"
     volumes:
       - ./config.json:/app/config.json:ro
     restart: unless-stopped
